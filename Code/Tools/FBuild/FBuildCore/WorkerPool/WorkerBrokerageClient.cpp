@@ -78,6 +78,8 @@ void WorkerBrokerageClient::FindWorkers( Array< AString > & outWorkerList )
     // Get addresses for the local host
     StackArray<AString> localAddresses;
     Network::GetIPv4Addresses( localAddresses );
+    AStackString<> localHostName;
+    Network::GetHostName( localHostName );
 
     // convert worker strings
     for (const AString & fileName : results )
@@ -86,7 +88,7 @@ void WorkerBrokerageClient::FindWorkers( Array< AString > & outWorkerList )
         AStackString<> workerName( lastSlash + 1 );
 
         // Filter out local addresses
-        if ( localAddresses.Find( workerName ) )
+        if ( localAddresses.Find( workerName ) || workerName.CompareI(localHostName) == 0 )
         {
             continue;
         }
