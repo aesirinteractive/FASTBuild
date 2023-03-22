@@ -226,7 +226,7 @@ void WorkerBrokerageServer::UpdateBrokerageFilePath()
 {
     if ( !m_BrokerageRoots.IsEmpty() )
     {
-        if ( !m_IPAddress.IsEmpty() )
+        if ( m_HostName.IsEmpty() )
         {
             m_BrokerageFilePath.Format( "%s%s", m_BrokerageRoots[0].Get(), m_IPAddress.Get() );
         }
