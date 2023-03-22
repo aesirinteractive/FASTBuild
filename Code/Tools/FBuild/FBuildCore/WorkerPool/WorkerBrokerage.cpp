@@ -62,11 +62,11 @@ void WorkerBrokerage::InitBrokerage()
             root.TrimEnd( ' ' );
             // <path>/<group>/<version>/
             #if defined( __WINDOWS__ )
-                brokerageRoot.Format( "%s\\main\\%u.windows\\", root.Get(), protocolVersion );
+                brokerageRoot.Format( "%s\\broker\\%u.windows\\", root.Get(), protocolVersion );
             #elif defined( __OSX__ )
-                brokerageRoot.Format( "%s/main/%u.osx/", root.Get(), protocolVersion );
+                brokerageRoot.Format( "%s/broker/%u.osx/", root.Get(), protocolVersion );
             #else
-                brokerageRoot.Format( "%s/main/%u.linux/", root.Get(), protocolVersion );
+                brokerageRoot.Format( "%s/broker/%u.linux/", root.Get(), protocolVersion );
             #endif
 
             m_BrokerageRoots.Append( brokerageRoot );
