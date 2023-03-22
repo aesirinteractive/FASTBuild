@@ -45,6 +45,8 @@ public:
     inline uint32_t GetMinimumFreeMemoryMiB() const { return m_MinimumFreeMemoryMiB; }
     void SetMinimumFreeMemoryMiB( uint32_t value );
 
+    void SetLimitCPUMemoryBased( bool value );
+
     void Load();
     void Save();
 
@@ -52,6 +54,7 @@ private:
     Mode        m_Mode;
     uint32_t	m_IdleThresholdPercent;
     uint32_t    m_NumCPUsToUse;
+    bool        m_LimitCPUMemoryBased;
     bool        m_StartMinimized;
     uint64_t    m_SettingsWriteTime;    // FileTime of settings when last changed/written to disk
     uint32_t    m_MinimumFreeMemoryMiB; // Minimum OS free memory including virtual memory to let worker do its work

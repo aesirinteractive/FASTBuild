@@ -10,6 +10,7 @@
 #include "Core/FileIO/FileIO.h"
 #include "Core/FileIO/FileStream.h"
 #include "Core/Strings/AStackString.h"
+#include "Tools/FBuild/FBuildWorker/FBuildWorkerOptions.h"
 
 // system
 #if defined( __WINDOWS__ )
@@ -18,24 +19,33 @@
 
 // Other
 //------------------------------------------------------------------------------
-#define FBUILDWORKER_SETTINGS_MIN_VERSION ( 1 )     // Oldest compatible version
-#define FBUILDWORKER_SETTINGS_CURRENT_VERSION ( 4 ) // Current version
+#define FBUILDWORKER_SETTINGS_MIN_VERSION ( 5 )     // Oldest compatible version
+#define FBUILDWORKER_SETTINGS_CURRENT_VERSION ( 5 ) // Current version
 
 // CONSTRUCTOR
 //------------------------------------------------------------------------------
 WorkerSettings::WorkerSettings()
-    : m_Mode( WHEN_IDLE )
+    : m_Mode( PROPORTIONAL )
     , m_IdleThresholdPercent( 20 )
     , m_NumCPUsToUse( 1 )
+    , m_LimitCPUMemoryBased ( true )
     , m_StartMinimized( false )
     , m_SettingsWriteTime( 0 )
-    , m_MinimumFreeMemoryMiB( 1024 ) // 1 GiB
+    , m_MinimumFreeMemoryMiB( 16384 ) // 16 GiB
 {
     // half CPUs available to use by default
     const uint32_t numCPUs = Env::GetNumProcessors();
-    m_NumCPUsToUse = Math::Max< uint32_t >( 1, numCPUs / 2 );
+    const uint32_t halfCPUs = Math::Max<uint32_t>(1, numCPUs / 2);
 
     Load();
+    if (m_LimitCPUMemoryBased) {
+        const int32_t cpuAllocationBasedOnMemory = FBuildWorkerOptions::GetCPUAllocationBasedOnMemory();
+        if (cpuAllocationBasedOnMemory != -1) {
+          m_NumCPUsToUse = (uint32_t)cpuAllocationBasedOnMemory;
+        }
+    } else {
+        m_NumCPUsToUse = halfCPUs;
+    }
 
     // handle CPU downgrade
     m_NumCPUsToUse = Math::Min( Env::GetNumProcessors(), m_NumCPUsToUse );
@@ -80,6 +90,13 @@ void WorkerSettings::SetMinimumFreeMemoryMiB( uint32_t value )
     m_MinimumFreeMemoryMiB = value;
 }
 
+// SetMinimumFreeMemoryMiB
+//------------------------------------------------------------------------------
+void WorkerSettings::SetLimitCPUMemoryBased( bool value )
+{
+    m_LimitCPUMemoryBased = value;
+}
+
 // Load
 //------------------------------------------------------------------------------
 void WorkerSettings::Load()
@@ -111,6 +128,7 @@ void WorkerSettings::Load()
         }
         f.Read( m_NumCPUsToUse );
         f.Read( m_StartMinimized );
+        f.Read( m_LimitCPUMemoryBased );
 
         f.Close();
 
@@ -140,6 +158,7 @@ void WorkerSettings::Save()
         ok &= f.Write( m_IdleThresholdPercent );
         ok &= f.Write( m_NumCPUsToUse );
         ok &= f.Write( m_StartMinimized );
+        ok &= f.Write( m_LimitCPUMemoryBased );
 
         f.Close();
 

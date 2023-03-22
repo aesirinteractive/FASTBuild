@@ -23,6 +23,8 @@ public:
 
     bool ProcessCommandLine( const AString & commandLine );
 
+    static int32_t GetCPUAllocationBasedOnMemory();
+
     // sub-process control
     #if defined( __WINDOWS__ )
         bool m_IsSubprocess;    // Process is child? (Internal)
@@ -32,6 +34,7 @@ public:
     // resource usage
     bool m_OverrideCPUAllocation;
     uint32_t m_CPUAllocation;
+    bool m_LimitCPUMemoryBased;
     bool m_OverrideWorkMode;
     WorkerSettings::Mode m_WorkMode;
     uint32_t m_MinimumFreeMemoryMiB; // Minimum OS free memory including virtual memory to let worker do its work
@@ -41,6 +44,8 @@ public:
 
 private:
     void ShowUsageError();
+
+    void SetCPUAllocationBasedOnMemory();
 };
 
 //------------------------------------------------------------------------------

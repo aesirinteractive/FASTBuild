@@ -140,6 +140,10 @@ int Main( const AString & args )
         {
             WorkerSettings::Get().SetMinimumFreeMemoryMiB( options.m_MinimumFreeMemoryMiB );
         }
+        if (options.m_LimitCPUMemoryBased)
+        {
+            WorkerSettings::Get().SetLimitCPUMemoryBased(options.m_LimitCPUMemoryBased);
+        }
         ret = worker.Work();
     }
 

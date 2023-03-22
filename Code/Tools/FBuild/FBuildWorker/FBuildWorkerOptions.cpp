@@ -3,6 +3,10 @@
 
 // Includes
 //------------------------------------------------------------------------------
+#if defined(__WINDOWS__)
+#include <WinSock2.h> // this must be here to avoid windows include order problems
+#endif
+
 #include "FBuildWorkerOptions.h"
 
 // FBuildCore
@@ -17,6 +21,7 @@
 #include <stdio.h>
 #if defined( __WINDOWS__ )
     #include "Core/Env/WindowsHeader.h"
+    #include <Psapi.h>
 #endif
 
 // FBuildWorkerOptions (CONSTRUCTOR)
@@ -24,18 +29,28 @@
 FBuildWorkerOptions::FBuildWorkerOptions() :
 #if defined( __WINDOWS__ )
     m_IsSubprocess( false ),
-    m_UseSubprocess( true ),
+    m_UseSubprocess( false ),
 #endif
     m_OverrideCPUAllocation( false ),
     m_CPUAllocation( 0 ),
+    m_LimitCPUMemoryBased(true),
     m_OverrideWorkMode( false ),
-    m_WorkMode( WorkerSettings::WHEN_IDLE ),
-    m_MinimumFreeMemoryMiB( 0 ),
+    m_WorkMode( WorkerSettings::PROPORTIONAL ),
+    m_MinimumFreeMemoryMiB( 16384 ),
     m_ConsoleMode( false )
 {
     #ifdef __LINUX__
         m_ConsoleMode = true; // Only console mode supported on Linux
     #endif
+    if (m_LimitCPUMemoryBased)
+    {
+        const int32_t cpuAllocationBasedOnMemory = GetCPUAllocationBasedOnMemory();
+        if (cpuAllocationBasedOnMemory != -1)
+        {
+            m_CPUAllocation = (uint32_t)cpuAllocationBasedOnMemory;
+            m_OverrideCPUAllocation = true;
+        }
+    }
 }
 
 // ProcessCommandLine
@@ -63,6 +78,16 @@ bool FBuildWorkerOptions::ProcessCommandLine( const AString & commandLine )
         #endif
         if ( token.BeginsWith( "-cpus=" ) )
         {
+            if (token == "-cpus=memorybased") {
+                const int32_t cpuAllocationBasedOnMemory = GetCPUAllocationBasedOnMemory();
+                if (cpuAllocationBasedOnMemory != -1)
+                {
+                    m_LimitCPUMemoryBased = true;
+                    m_CPUAllocation = (uint32_t)cpuAllocationBasedOnMemory;
+                    m_OverrideCPUAllocation = true;
+                }
+                continue;
+            }
             const int32_t numCPUs = (int32_t)Env::GetNumProcessors();
             int32_t num( 0 );
             if ( AString::ScanS( token.Get() + 6, "%i", &num ) == 1 )
@@ -70,18 +95,21 @@ bool FBuildWorkerOptions::ProcessCommandLine( const AString & commandLine )
                 if ( token.EndsWith( '%' ) )
                 {
                     num = (int32_t)( (float)numCPUs * (float)num / 100.0f );
+                    m_LimitCPUMemoryBased = false;
                     m_CPUAllocation = (uint32_t)Math::Clamp( num, 1, numCPUs );
                     m_OverrideCPUAllocation = true;
                     continue;
                 }
                 else if ( num > 0 )
                 {
+                    m_LimitCPUMemoryBased = false;
                     m_CPUAllocation = (uint32_t)Math::Clamp( num, 1, numCPUs );
                     m_OverrideCPUAllocation = true;
                     continue;
                 }
                 else if ( num < 0 )
                 {
+                    m_LimitCPUMemoryBased = false;
                     m_CPUAllocation = (uint32_t)Math::Clamp( ( numCPUs + num ), 1, numCPUs );
                     m_OverrideCPUAllocation = true;
                     continue;
@@ -148,6 +176,25 @@ bool FBuildWorkerOptions::ProcessCommandLine( const AString & commandLine )
     return true;
 }
 
+/**
+ * \brief Gets the suggested number of CPU cores based on available memory and CPUs 
+ * \return CPU Allocation; -1 if performance info can not be read
+ */
+int32_t FBuildWorkerOptions::GetCPUAllocationBasedOnMemory()
+{
+  PERFORMANCE_INFORMATION memInfo;
+  memInfo.cb = sizeof(memInfo);
+  if (!GetPerformanceInfo(&memInfo, sizeof(memInfo))) {
+    return -1;
+  }
+  
+  const u_int64 totalSystemMemory = memInfo.PhysicalTotal * memInfo.PageSize / MEGABYTE;
+  const uint64_t minFreeMemPerCoreMiB = 3072;
+
+  const int32_t num = (int32_t)((float)totalSystemMemory / (float)minFreeMemPerCoreMiB);
+  return Math::Clamp(num, 1, (int32_t)Env::GetNumProcessors());
+}
+
 // ShowUsageError
 //------------------------------------------------------------------------------
 void FBuildWorkerOptions::ShowUsageError()
@@ -159,10 +206,11 @@ void FBuildWorkerOptions::ShowUsageError()
                        "---------------------------------------------------------------------------\n"
                        " -console\n"
                        "        (Windows/OSX) Operate from console instead of GUI.\n"
-                       " -cpus=<n|-n|n%>   Set number of CPUs to use:\n"
+                       " -cpus=<n|-n|n%|memorybased>   Set number of CPUs to use:\n"
                        "        -  n : Explicit number.\n"
                        "        - -n : Num CPU Cores-n.\n"
                        "        - n% : % of CPU Cores.\n"
+                       "        - memorybased : One CPU core per 3072 MiB of total memory.\n"
                        " -debug\n"
                        "        (Windows) Break at startup, to attach debugger.\n"
                        " -mode=<disabled|idle|dedicated|proportional>\n"
