@@ -92,8 +92,9 @@ int Main( const AString & args )
     const Timer t;
     while ( g_OneProcessMutex.TryLock() == false )
     {
-        // retry for upto 2 seconds, to allow some time for old worker to close
-        if ( t.GetElapsed() > 5.0f )
+        constexpr float retry_duration = 5.0f;
+        // retry for upto <retryDuration> seconds, to allow some time for old worker to close
+        if ( t.GetElapsed() > retry_duration )
         {
             Env::ShowMsgBox( "FBuildWorker", "An FBuildWorker is already running!" );
             return -1;
