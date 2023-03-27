@@ -31,7 +31,7 @@ WorkerSettings::WorkerSettings()
     , m_LimitCPUMemoryBased ( true )
     , m_StartMinimized( false )
     , m_SettingsWriteTime( 0 )
-    , m_MinimumFreeMemoryMiB( 16384 ) // 16 GiB
+    , m_MinimumFreeMemoryMiB( 4096 ) // 4 GiB
 {
     // half CPUs available to use by default
     const uint32_t numCPUs = Env::GetNumProcessors();

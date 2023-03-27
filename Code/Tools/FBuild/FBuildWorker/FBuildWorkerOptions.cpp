@@ -36,7 +36,7 @@ FBuildWorkerOptions::FBuildWorkerOptions() :
     m_LimitCPUMemoryBased(true),
     m_OverrideWorkMode( false ),
     m_WorkMode( WorkerSettings::PROPORTIONAL ),
-    m_MinimumFreeMemoryMiB( 16384 ),
+    m_MinimumFreeMemoryMiB( 4096 ),
     m_ConsoleMode( false )
 {
     #ifdef __LINUX__
