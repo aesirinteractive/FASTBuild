@@ -49,6 +49,9 @@ WorkerSettings::WorkerSettings()
 
     // handle CPU downgrade
     m_NumCPUsToUse = Math::Min( Env::GetNumProcessors(), m_NumCPUsToUse );
+
+    // Immediately save so external tools can access the settings directly after the first launch
+    Save();
 }
 
 // DESTRUCTOR
