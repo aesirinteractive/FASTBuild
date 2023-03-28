@@ -19,7 +19,7 @@
 
 // Other
 //------------------------------------------------------------------------------
-#define FBUILDWORKER_SETTINGS_MIN_VERSION ( 5 )     // Oldest compatible version
+#define FBUILDWORKER_SETTINGS_MIN_VERSION ( 1 )     // Oldest compatible version
 #define FBUILDWORKER_SETTINGS_CURRENT_VERSION ( 5 ) // Current version
 
 // CONSTRUCTOR
